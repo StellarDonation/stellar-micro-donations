@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const encryptionService = require('../services/encryptionService');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -28,6 +29,10 @@ const userSchema = new mongoose.Schema({
     unique: true
   },
   stellarSecretKey: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true
+  },
+  stellarSecretKeyHash: {
     type: String,
     required: true
   },
@@ -98,9 +103,9 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -110,13 +115,49 @@ userSchema.pre('save', async function(next) {
   }
 });
 
+// Encrypt secret key before saving
+userSchema.pre('save', function (next) {
+  if (!this.isModified('stellarSecretKey')) return next();
+
+  try {
+    // Only encrypt if it's not already encrypted (plain string)
+    if (typeof this.stellarSecretKey === 'string') {
+      const encryptedData = encryptionService.encrypt(this.stellarSecretKey);
+      this.stellarSecretKey = encryptedData;
+      this.stellarSecretKeyHash = encryptionService.hashSecretKey(this.stellarSecretKey);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
+// Get decrypted secret key method
+userSchema.methods.getDecryptedSecretKey = function () {
+  try {
+    if (typeof this.stellarSecretKey === 'string') {
+      // Legacy plain text (for migration)
+      return this.stellarSecretKey;
+    }
+    return encryptionService.decrypt(this.stellarSecretKey);
+  } catch (error) {
+    throw new Error(`Failed to decrypt secret key: ${error.message}`);
+  }
+};
+
+// Verify secret key method
+userSchema.methods.verifySecretKey = function (candidateSecretKey) {
+  const candidateHash = encryptionService.hashSecretKey(candidateSecretKey);
+  return candidateHash === this.stellarSecretKeyHash;
+};
+
 // Update timestamp on save
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });

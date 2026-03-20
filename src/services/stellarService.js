@@ -1,5 +1,6 @@
 const StellarSdk = require('stellar-sdk');
 const axios = require('axios');
+const keyManagementService = require('./keyManagementService');
 
 class StellarService {
   constructor() {
@@ -15,20 +16,14 @@ class StellarService {
   // Create a new Stellar account
   async createAccount() {
     try {
-      const keypair = StellarSdk.Keypair.random();
-      const publicKey = keypair.publicKey();
-      const secretKey = keypair.secret();
+      const secureAccount = keyManagementService.createSecureAccount();
 
       // For testnet, fund the account using friendbot
       if (process.env.STELLAR_NETWORK === 'testnet') {
-        await this.fundTestnetAccount(publicKey);
+        await this.fundTestnetAccount(secureAccount.publicKey);
       }
 
-      return {
-        publicKey,
-        secretKey,
-        network: process.env.STELLAR_NETWORK || 'testnet'
-      };
+      return secureAccount;
     } catch (error) {
       throw new Error(`Failed to create Stellar account: ${error.message}`);
     }
@@ -214,12 +209,12 @@ class StellarService {
 
   // Validate Stellar address
   isValidStellarAddress(address) {
-    try {
-      StellarSdk.StrKey.decodeEd25519PublicKey(address);
-      return true;
-    } catch (error) {
-      return false;
-    }
+    return keyManagementService.isValidPublicKey(address);
+  }
+
+  // Validate Stellar secret key
+  isValidStellarSecretKey(secretKey) {
+    return keyManagementService.isValidSecretKey(secretKey);
   }
 
   // Generate unique memo for donations

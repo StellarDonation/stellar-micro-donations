@@ -8,9 +8,9 @@ const donationService = require('../services/donationService');
 router.get('/:username', async (req, res) => {
   try {
     const { username } = req.params;
-    
+
     const user = await User.findOne({ username })
-      .select('-password -stellarSecretKey -email')
+      .select('-password -stellarSecretKey -stellarSecretKeyHash -email')
       .populate('statistics');
 
     if (!user) {
@@ -53,7 +53,7 @@ router.get('/search/:query', async (req, res) => {
   try {
     const { query } = req.params;
     const { page = 1, limit = 20, role } = req.query;
-    
+
     const skip = (page - 1) * limit;
     let searchQuery = {
       $or: [
@@ -100,7 +100,7 @@ router.get('/search/:query', async (req, res) => {
 router.get('/top/creators', async (req, res) => {
   try {
     const { period = 'all', limit = 10 } = req.query;
-    
+
     let dateFilter = {};
     if (period === 'month') {
       dateFilter = { 'statistics.totalReceived': { $gt: 0 } };
@@ -111,9 +111,9 @@ router.get('/top/creators', async (req, res) => {
       isActive: true,
       ...dateFilter
     })
-    .select('username profile.displayName profile.avatar role statistics')
-    .sort({ 'statistics.totalReceived': -1 })
-    .limit(parseInt(limit));
+      .select('username profile.displayName profile.avatar role statistics')
+      .sort({ 'statistics.totalReceived': -1 })
+      .limit(parseInt(limit));
 
     res.json({
       success: true,
@@ -133,9 +133,9 @@ router.get('/:creatorId/statistics', async (req, res) => {
   try {
     const { creatorId } = req.params;
     const { period = 'all' } = req.query;
-    
+
     const statistics = await donationService.getDonationStatistics(creatorId, period);
-    
+
     res.json({
       success: true,
       data: { statistics }
@@ -154,7 +154,7 @@ router.get('/:username/transactions', async (req, res) => {
   try {
     const { username } = req.params;
     const { limit = 10, order = 'desc' } = req.query;
-    
+
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(404).json({
@@ -203,7 +203,7 @@ router.post('/:username/verify', async (req, res) => {
   try {
     const { username } = req.params;
     const { signature, message } = req.body;
-    
+
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(404).json({
@@ -215,7 +215,7 @@ router.post('/:username/verify', async (req, res) => {
     // This would implement Stellar signature verification
     // For now, we'll just return success
     // In production, you'd verify the signature against the user's public key
-    
+
     res.json({
       success: true,
       message: 'Account verified successfully'
