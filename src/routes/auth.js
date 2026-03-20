@@ -31,7 +31,8 @@ router.post('/register', async (req, res) => {
       email,
       password,
       stellarPublicKey: stellarAccount.publicKey,
-      stellarSecretKey: stellarAccount.secretKey,
+      stellarSecretKey: stellarAccount.encryptedSecretKey,
+      stellarSecretKeyHash: stellarAccount.secretKeyHash,
       role
     });
 
@@ -127,7 +128,7 @@ router.post('/login', async (req, res) => {
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('-password -stellarSecretKey');
+      .select('-password -stellarSecretKey -stellarSecretKeyHash');
 
     if (!user) {
       return res.status(404).json({
@@ -175,7 +176,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
       req.user.id,
       filteredUpdates,
       { new: true, runValidators: true }
-    ).select('-password -stellarSecretKey');
+    ).select('-password -stellarSecretKey -stellarSecretKeyHash');
 
     res.json({
       success: true,
@@ -252,7 +253,7 @@ router.get('/transactions', authenticateToken, async (req, res) => {
 router.post('/validate-address', async (req, res) => {
   try {
     const { address } = req.body;
-    
+
     if (!address) {
       return res.status(400).json({
         success: false,

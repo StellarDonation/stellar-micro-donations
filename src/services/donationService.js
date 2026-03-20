@@ -56,7 +56,7 @@ class DonationService {
 
       // Process the Stellar transaction
       const transactionResult = await stellarService.sendPayment(
-        donor.stellarSecretKey,
+        donor.getDecryptedSecretKey(),
         creator.stellarPublicKey,
         finalAmount,
         'XLM',
