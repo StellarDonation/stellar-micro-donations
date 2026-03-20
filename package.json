@@ -1,0 +1,37 @@
+{
+  "name": "stellar-micro-donations",
+  "version": "1.0.0",
+  "description": "Cross-Border Micro-Donation Platform using Stellar",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-all": "npm install && cd client && npm install",
+    "test": "echo \"No tests specified yet\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "stellar-sdk": "^11.0.0",
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "mongoose": "^7.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "axios": "^1.5.0",
+    "node-cron": "^3.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "stellar",
+    "donations",
+    "cryptocurrency",
+    "micropayments"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
